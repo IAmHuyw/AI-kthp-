@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Giải Mê Cung bằng BFS</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin: 20px; }
+    textarea { width: 300px; height: 100px; }
+    #mazeContainer { display: grid; gap: 4px; justify-content: center; margin: 20px auto; }
+    .cell {
+      width: 40px; height: 40px; line-height: 40px;
+      text-align: center; border: 1px solid #888;
+    }
+    .wall { background: #333; color: white; }
+    .start { background: yellow; }
+    .end { background: orange; }
+    .path { background: lightgreen; }
+  </style>
+</head>
+<body>
+
+<h1>Giải Mê Cung bằng BFS</h1>
+
+<p>Nhập mê cung (0: đường, 1: tường):</p>
+<textarea id="mazeInput">0 1 0 1
+0 0 0 1
+0 1 0 0
+0 1 0 0</textarea><br>
+
+<p>Điểm bắt đầu (hàng, cột): <input id="start" value="0,0"> | Điểm kết thúc: <input id="end" value="3,3"></p>
+<button onclick="parseMazeAndSolve()">Tìm đường đi</button>
+<p id="result"></p>
+<div id="mazeContainer"></div>
+
+<script>
+  let maze = [], rows = 0, cols = 0, start = [0,0], end = [0,0];
+
+  function parseMazeAndSolve() {
+    const raw = document.getElementById("mazeInput").value.trim();
+    maze = raw.split("\n").map(row => row.trim().split(/\s+/).map(Number));
+    rows = maze.length;
+    cols = maze[0].length;
+
+    try {
+      start = document.getElementById("start").value.split(",").map(Number);
+      end = document.getElementById("end").value.split(",").map(Number);
+    } catch {
+      document.getElementById("result").textContent = "❌ Lỗi khi nhập tọa độ!";
+      return;
+    }
+
+    solveMaze();
+  }
+
+  function drawMaze(path = []) {
+    const container = document.getElementById("mazeContainer");
+    container.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+    container.innerHTML = "";
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        if (maze[r][c] === 1) cell.classList.add("wall");
+        if (r === start[0] && c === start[1]) cell.classList.add("start");
+        else if (r === end[0] && c === end[1]) cell.classList.add("end");
+        else if (path.some(([pr, pc]) => pr === r && pc === c)) cell.classList.add("path");
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  function solveMaze() {
+    const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+    const parent = Array.from({ length: rows }, () => Array(cols).fill(null));
+    const queue = [start];
+    visited[start[0]][start[1]] = true;
+
+    const directions = [[-1,0],[1,0],[0,-1],[0,1]];
+
+    while (queue.length > 0) {
+      const [r, c] = queue.shift();
+      if (r === end[0] && c === end[1]) {
+        const path = [];
+        let cur = end;
+        while (cur) {
+          path.push(cur);
+          cur = parent[cur[0]][cur[1]];
+        }
+        path.reverse();
+        drawMaze(path);
+        document.getElementById("result").textContent = "✅ Tìm thấy đường đi!";
+        return;
+      }
+
+      for (const [dr, dc] of directions) {
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols &&
+            !visited[nr][nc] && maze[nr][nc] === 0) {
+          queue.push([nr, nc]);
+          visited[nr][nc] = true;
+          parent[nr][nc] = [r, c];
+        }
+      }
+    }
+
+    drawMaze(); // không có đường đi
+    document.getElementById("result").textContent = "❌ Không tìm thấy đường đi!";
+  }
+
+  parseMazeAndSolve(); // Tự vẽ khi mở
+</script>
+
+</body>
+</html>
